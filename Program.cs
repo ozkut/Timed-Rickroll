@@ -67,28 +67,29 @@ namespace TimedRickroll
             while (true)
             {
                 TimeSpan currentTime = DateTime.Now.TimeOfDay;
+                int timeComparison = TimeSpan.Compare(enteredTime, currentTime);
 
-                if (currentTime == enteredTime)
+                switch (timeComparison)
                 {
-                    Process process = new() 
-                    { 
-                        StartInfo = new()
+                    case 0:
+                        Process process = new()
                         {
-                            UseShellExecute = true,
-                            FileName = link
-                        } 
-                    };
-                    try { process.Start(); } catch (System.ComponentModel.Win32Exception) { }
-                    break;
+                            StartInfo = new()
+                            {
+                                UseShellExecute = true,
+                                FileName = link
+                            }
+                        };
+                        process.Start();
+                        break;
+                    //FIX
+                    //case int _ when timeComparison < 0:
+                    //    Console.ForegroundColor = ConsoleColor.DarkRed;
+                    //    Console.Clear();
+                    //    Console.WriteLine("Entered time has already passed!");
+                    //    break;
                 }
-
-                else if (currentTime > enteredTime)
-                {
-                    Console.ForegroundColor = ConsoleColor.DarkRed;
-                    Console.Clear();
-                    Console.WriteLine("Entered time has already passed!");
-                    break;
-                }
+                break;
             }
 
             Console.ReadKey();

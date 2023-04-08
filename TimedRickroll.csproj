@@ -4,15 +4,31 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <Nullable>disable</Nullable>
     <StartupObject>TimedRickroll.Program</StartupObject>
     <ApplicationIcon>rick.ico</ApplicationIcon>
     <SignAssembly>False</SignAssembly>
     <Authors>ozkut</Authors>
+    <PackageIcon>rick.jpg</PackageIcon>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>portable</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>portable</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
     <Content Include="rick.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="E:\Useless stuff\rick.jpg">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
