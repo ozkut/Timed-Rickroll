@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 
 namespace TimedRickroll
@@ -8,64 +9,109 @@ namespace TimedRickroll
     {
         static void Main(string[] args)
         {
-            Thread thread0 = new(DisplayTime);
-            thread0.Start();
+            Console.Write("Please enter your custom link (leave blank for Rickroll): ");
+            string link = Console.ReadLine();
+            if (link == string.Empty)
+                link = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley";
 
-            if (!TimeSpan.TryParse(Console.ReadLine(), out TimeSpan enteredTime))
-                return;
-            
-            Thread thread1 = new(new ThreadStart(delegate () { DisplayCountdown(enteredTime); }));
-            thread1.Start();
+            Console.CursorVisible = false;
+
+            CancellationTokenSource tokenSource = new();
+            ThreadStart threadStart = new(delegate () { DisplayTime(); });
+
+            Thread DisplayTime_Thread = new(threadStart) { IsBackground = true };
+            DisplayTime_Thread.Start();
+
+            TimeSpan enteredTime;
+            while (!TimeSpan.TryParse(Console.ReadLine(), out enteredTime))
+            {
+                Console.SetCursorPosition(24,1);
+
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.Write("Incorrect time format!");
+                Console.ResetColor();
+
+                Thread.Sleep(1000);
+
+                Console.SetCursorPosition(24, 1);
+                Console.Write(new string(' ', Console.WindowWidth));
+                Console.SetCursorPosition(24,1);
+            }
+
+            tokenSource.Cancel();
+            DisplayTime_Thread = new(threadStart) { IsBackground = true };
+            DisplayTime_Thread.Start();
+
+            Thread.Sleep(20);
+
+            Thread DisplayCountdown_Thread = new(new ThreadStart(delegate () { DisplayCountdown(enteredTime); })) { IsBackground = true };
+            DisplayCountdown_Thread.Start();
 
             while (true)
             {
-                if (DateTime.Now.TimeOfDay == enteredTime)
+                TimeSpan currentTime = DateTime.Now.TimeOfDay;
+
+                if (currentTime == enteredTime)
                 {
                     Process process = new() 
                     { 
                         StartInfo = new()
                         {
                             UseShellExecute = true,
-                            FileName = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley"
+                            FileName = link
                         } 
                     };
                     process.Start();
                     break;
                 }
+
+                else if (currentTime > enteredTime)
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkRed;
+                    Console.Clear();
+                    Console.WriteLine("Entered time has already passed!");
+                    break;
+                }
             }
+
+            Console.ReadKey();
+            tokenSource.Dispose();
+            Environment.Exit(Environment.ExitCode);
         }
 
         private async static void DisplayCountdown(TimeSpan enteredTime)
         {
             const string Text = "Remaining time: ";
-            Console.Write(Text);
+            Console.Write("\n" + Text);
             while (true) 
             {
-                TimeSpan remainingTime = enteredTime - DateTime.Now.TimeOfDay;
-                Console.SetCursorPosition(Text.Length,2);
-                Console.Write(remainingTime.Seconds);
+                Console.SetCursorPosition(Text.Length,3);
+                Console.Write((enteredTime - DateTime.Now.TimeOfDay + TimeSpan.FromSeconds(1)).ToString("hh\\:mm\\:ss"));
+
                 await Task.Delay(1000);
-                Console.SetCursorPosition(Text.Length,2);
-                Console.Write(new string(' ', Console.BufferWidth));
+
+                Console.SetCursorPosition(Text.Length,3);
+                Console.Write(new string(' ', Console.WindowWidth));
             }
         }
 
-        private async static void DisplayTime()
+        private async static void DisplayTime(CancellationToken token = default)
         {
-            Console.CursorVisible = false;
-            Console.CursorTop = 1;
-
-            int cursorPosLeft = 0;
             const string Text = "Enter time of Rickroll: ";
+            int cursorPosLeft = 0;
+
+            Console.CursorTop = 2;
             Console.Write(Text);
 
-            while (true)
+            while (!token.IsCancellationRequested)
             {
-                Console.SetCursorPosition(0,0);
-                Console.Write($"Current time: {DateTime.Now:HH:mm:ss} (hour:minute:second)");
-                Console.SetCursorPosition(Text.Length + cursorPosLeft, 1);
-                await Task.Delay(1000);
-                Console.CursorTop -= 1;
+                Console.SetCursorPosition(0,1);
+                Console.Write($"Current time: {DateTime.Now:HH:mm:ss} (hours:minutes:seconds)");
+                Console.SetCursorPosition(Text.Length + cursorPosLeft, 2);
+
+                try { await Task.Delay(1000, token); } catch (TaskCanceledException) { return; }
+
+                Console.CursorTop = 1;
                 cursorPosLeft = Console.CursorLeft - Text.Length;
             }
         }
