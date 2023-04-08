@@ -8,13 +8,15 @@ namespace TimedRickroll
     {
         static void Main(string[] args)
         {
-            Thread thread = new(DisplayTime);
-            thread.Start();
+            Thread thread0 = new(DisplayTime);
+            thread0.Start();
 
             if (!TimeSpan.TryParse(Console.ReadLine(), out TimeSpan enteredTime))
                 return;
+            
+            Thread thread1 = new(new ThreadStart(delegate () { DisplayCountdown(enteredTime); }));
+            thread1.Start();
 
-            Console.WriteLine("Starting countdown...");
             while (true)
             {
                 if (DateTime.Now.TimeOfDay == enteredTime)
@@ -33,6 +35,21 @@ namespace TimedRickroll
             }
         }
 
+        private async static void DisplayCountdown(TimeSpan enteredTime)
+        {
+            const string Text = "Remaining time: ";
+            Console.Write(Text);
+            while (true) 
+            {
+                TimeSpan remainingTime = enteredTime - DateTime.Now.TimeOfDay;
+                Console.SetCursorPosition(Text.Length,2);
+                Console.Write(remainingTime.Seconds);
+                await Task.Delay(1000);
+                Console.SetCursorPosition(Text.Length,2);
+                Console.Write(new string(' ', Console.BufferWidth));
+            }
+        }
+
         private async static void DisplayTime()
         {
             Console.CursorVisible = false;
@@ -48,6 +65,7 @@ namespace TimedRickroll
                 Console.Write($"Current time: {DateTime.Now:HH:mm:ss} (hour:minute:second)");
                 Console.SetCursorPosition(Text.Length + cursorPosLeft, 1);
                 await Task.Delay(1000);
+                Console.CursorTop -= 1;
                 cursorPosLeft = Console.CursorLeft - Text.Length;
             }
         }
