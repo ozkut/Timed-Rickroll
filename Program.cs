@@ -9,10 +9,29 @@ namespace TimedRickroll
     {
         static void Main(string[] args)
         {
-            Console.Write("Please enter your custom link (leave blank for Rickroll): ");
+            Console.CursorVisible = true;
+
+            Console.Write("Enter custom link (leave blank for Rickroll): ");//46
             string link = Console.ReadLine();
             if (link == string.Empty)
                 link = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley";
+            else
+            { 
+                while (!(Uri.TryCreate(link, UriKind.Absolute, out Uri result) && result != null && (result.Scheme == Uri.UriSchemeHttp || result.Scheme == Uri.UriSchemeHttps)))
+                {
+                    Console.SetCursorPosition(46,0);
+                    Console.ForegroundColor = ConsoleColor.DarkRed;
+                    Console.Write("Link is invalid!");
+                    Console.ResetColor();
+
+                    Thread.Sleep(1000);
+
+                    Console.SetCursorPosition(46,0);
+                    Console.Write(new string(' ', Console.WindowWidth));
+                    Console.SetCursorPosition(46,0);
+                    link = Console.ReadLine();
+                }
+            }
 
             Console.CursorVisible = false;
 
@@ -61,7 +80,7 @@ namespace TimedRickroll
                             FileName = link
                         } 
                     };
-                    process.Start();
+                    try { process.Start(); } catch (System.ComponentModel.Win32Exception) { }
                     break;
                 }
 
