@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Timers;
 
 namespace TimedRickroll
 {
@@ -10,11 +11,11 @@ namespace TimedRickroll
             Console.CursorVisible = true;
 
             Console.Write("Enter custom link (leave blank for Rickroll): ");//46
-            string link = Console.ReadLine();
+            string link = Console.ReadLine(); 
             if (link == string.Empty)
                 link = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley";
             else
-            { 
+            {
                 while (!(Uri.TryCreate(link, UriKind.Absolute, out Uri result) && result != null && (result.Scheme == Uri.UriSchemeHttp || result.Scheme == Uri.UriSchemeHttps)))
                 {
                     Console.SetCursorPosition(46,0);
@@ -36,13 +37,13 @@ namespace TimedRickroll
             CancellationTokenSource tokenSource = new();
             ThreadStart threadStart = new(delegate () { DisplayTime(); });
 
-            Thread DisplayTime_Thread = new(threadStart) { IsBackground = true };
+            Thread DisplayTime_Thread = new(threadStart) { IsBackground = true };//TURN INTO A TIMER
             DisplayTime_Thread.Start();
 
             TimeSpan enteredTime;
             while (!TimeSpan.TryParse(Console.ReadLine(), out enteredTime))
             {
-                Console.SetCursorPosition(24,1);
+                Console.SetCursorPosition(24,2);
 
                 Console.ForegroundColor = ConsoleColor.DarkRed;
                 Console.Write("Incorrect time format!");
@@ -50,9 +51,9 @@ namespace TimedRickroll
 
                 Thread.Sleep(1000);
 
-                Console.SetCursorPosition(24, 1);
+                Console.SetCursorPosition(24,2);
                 Console.Write(new string(' ', Console.WindowWidth));
-                Console.SetCursorPosition(24,1);
+                Console.SetCursorPosition(24,2);
             }
 
             tokenSource.Cancel();
@@ -62,39 +63,35 @@ namespace TimedRickroll
             Thread.Sleep(20);
 
             Thread DisplayCountdown_Thread = new(new ThreadStart(delegate () { DisplayCountdown(enteredTime); })) { IsBackground = true };
-            DisplayCountdown_Thread.Start();
+            DisplayCountdown_Thread.Start();//TURN TNTO A TIMER
 
-            while (true)
-            {
-                TimeSpan currentTime = DateTime.Now.TimeOfDay;
-                int timeComparison = TimeSpan.Compare(enteredTime, currentTime);
+            TimeSpan timeDifference = enteredTime - DateTime.Now.TimeOfDay;
 
-                switch (timeComparison)
-                {
-                    case 0:
-                        Process process = new()
-                        {
-                            StartInfo = new()
-                            {
-                                UseShellExecute = true,
-                                FileName = link
-                            }
-                        };
-                        process.Start();
-                        break;
-                    //FIX
-                    //case int _ when timeComparison < 0:
-                    //    Console.ForegroundColor = ConsoleColor.DarkRed;
-                    //    Console.Clear();
-                    //    Console.WriteLine("Entered time has already passed!");
-                    //    break;
-                }
-                break;
-            }
+            System.Timers.Timer timer = new(timeDifference.TotalMilliseconds) { Enabled = true, AutoReset = false };
+            timer.Elapsed += (source, e) => TimerElapsed(source, e, link);
+            timer.Start();
+            Console.ReadKey();
+
+            //Console.ForegroundColor = ConsoleColor.DarkRed;
+            //Console.Clear();
+            //Console.WriteLine("Entered time has already passed!");
 
             Console.ReadKey();
             tokenSource.Dispose();
             Environment.Exit(Environment.ExitCode);
+        }
+
+        private static void TimerElapsed(object source, ElapsedEventArgs e, string link)
+        {
+            Process process = new()
+            {
+                StartInfo = new()
+                {
+                    UseShellExecute = true,
+                    FileName = link
+                }
+            };
+            process.Start();
         }
 
         private async static void DisplayCountdown(TimeSpan enteredTime)
