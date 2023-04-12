@@ -7,12 +7,13 @@ namespace TimedRickroll
     internal class Program
     {
         private static int cursorPosLeft = 0;
+        private static bool timeEntered = false;
 
         static void Main(string[] args)
         {
             Console.CursorVisible = true;
 
-            Console.Write("Enter custom link (leave blank for Rickroll): ");//46
+            Console.Write("Enter custom link (leave blank for Rickroll): ");
             string link = Console.ReadLine(); 
             if (link == string.Empty) link = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley";
             else
@@ -33,23 +34,22 @@ namespace TimedRickroll
                 }
             }
 
-            //Console.CursorVisible = false;
+            Console.CursorVisible = false;
             
-            DisplayTime(false);
-
+            DisplayTime();
             Console.CursorTop = 2;
             Console.Write("Enter time of Rickroll: ");
 
             Timer DisplayTime_Timer = new(1000) { AutoReset = true };
-            DisplayTime_Timer.Elapsed += (source, e) => DisplayTime(false);
+            DisplayTime_Timer.Elapsed += (source, e) => DisplayTime();
             DisplayTime_Timer.Start();
 
-            TimeSpan enteredTime = TimeSpan.MinValue;
+            TimeSpan enteredTime;
             bool timeNotParsed;
+
             while ((timeNotParsed = !TimeSpan.TryParse(Console.ReadLine(), out enteredTime)) || ((enteredTime - DateTime.Now.TimeOfDay).Seconds <= 0))
             {
                 Console.SetCursorPosition(24,2);
-
                 Console.ForegroundColor = ConsoleColor.DarkRed;
                 Console.Write(timeNotParsed ? "Incorrect time format!" : "Time is in the past!");
                 Console.ResetColor();
@@ -62,28 +62,23 @@ namespace TimedRickroll
             }
 
             DisplayTime_Timer.Stop();
-            DisplayTime_Timer.Elapsed += (source, e) => DisplayTime(true);
-            DisplayTime_Timer.Start();
+            timeEntered = true;
 
             Timer DisplayCountdown_Timer = new(1000) { AutoReset = true };
             DisplayCountdown_Timer.Elapsed += (source, e) => DisplayCountdown(enteredTime);
-
-            DisplayTime_Timer.Stop();
             DisplayCountdown_Timer.Start();
+
             System.Threading.Thread.Sleep(20);
             DisplayTime_Timer.Start();
-
-            //Console.WriteLine(timeDifference.TotalSeconds);
 
             Timer timer = new((enteredTime - DateTime.Now.TimeOfDay).TotalMilliseconds) { AutoReset = false };
             timer.Elapsed += (source, e) => TimerElapsed(link);
             timer.Start();
 
-            //Console.ForegroundColor = ConsoleColor.DarkRed;
-            //Console.Clear();
-            //Console.WriteLine("Entered time has already passed!");
-
             Console.ReadKey();
+            DisplayTime_Timer.Stop();
+            DisplayCountdown_Timer.Stop();
+            timer.Stop();
             Environment.Exit(Environment.ExitCode);
         }
 
@@ -106,12 +101,12 @@ namespace TimedRickroll
             Console.Write($"Remaining time: {enteredTime - DateTime.Now.TimeOfDay + TimeSpan.FromSeconds(1):hh\\:mm\\:ss}");
         }
 
-        private static void DisplayTime(bool timeEntered)
+        private static void DisplayTime()
         {
-            cursorPosLeft = Console.CursorLeft - 24;
+            cursorPosLeft = Console.CursorLeft - 22;
             Console.SetCursorPosition(0,1);
-            Console.Write($"Current time: {DateTime.Now:HH:mm:ss} (hours:minutes:seconds)");
-            if (!timeEntered) Console.SetCursorPosition(cursorPosLeft + 24, 2);
+            Console.Write($"Current time: {DateTime.Now:HH:mm:ss}");
+            if (!timeEntered) Console.SetCursorPosition(cursorPosLeft + 22, 2);
         }
     }
 }
