@@ -11,6 +11,7 @@ namespace TimedRickroll
 
         static void Main(string[] args)
         {
+            Console.Clear();
             Console.CursorVisible = true;
 
             Console.Write("Enter custom link (leave blank for Rickroll): ");
