@@ -15,7 +15,8 @@ namespace TimedRickroll
 
             Console.Write("Enter custom link (leave blank for Rickroll): ");
             string link = Console.ReadLine(); 
-            if (link == string.Empty) link = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley";
+            if (link == string.Empty) 
+                link = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley";
             else
             {
                 while (!(Uri.TryCreate(link, UriKind.Absolute, out Uri result) && result != null && (result.Scheme == Uri.UriSchemeHttp || result.Scheme == Uri.UriSchemeHttps)))
@@ -103,7 +104,8 @@ namespace TimedRickroll
             cursorPosLeft = Console.CursorLeft - 22;
             Console.SetCursorPosition(0,1);
             Console.Write($"Current time: {DateTime.Now:HH:mm:ss}");
-            if (!timeEntered) Console.SetCursorPosition(cursorPosLeft + 22, 2);
+            if (!timeEntered) 
+                Console.SetCursorPosition(cursorPosLeft + 22, 2);
         }
     }
 }
