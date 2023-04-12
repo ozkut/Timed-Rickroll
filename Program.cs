@@ -6,14 +6,15 @@ namespace TimedRickroll
 {
     internal class Program
     {
+        private static int cursorPosLeft = 0;
+
         static void Main(string[] args)
         {
             Console.CursorVisible = true;
 
             Console.Write("Enter custom link (leave blank for Rickroll): ");//46
             string link = Console.ReadLine(); 
-            if (link == string.Empty)
-                link = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley";
+            if (link == string.Empty) link = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley";
             else
             {
                 while (!(Uri.TryCreate(link, UriKind.Absolute, out Uri result) && result != null && (result.Scheme == Uri.UriSchemeHttp || result.Scheme == Uri.UriSchemeHttps)))
@@ -23,7 +24,7 @@ namespace TimedRickroll
                     Console.Write("Link is invalid!");
                     Console.ResetColor();
 
-                    Thread.Sleep(1000);
+                    System.Threading.Thread.Sleep(1000);
 
                     Console.SetCursorPosition(46,0);
                     Console.Write(new string(' ', Console.WindowWidth));
@@ -32,56 +33,61 @@ namespace TimedRickroll
                 }
             }
 
-            Console.CursorVisible = false;
+            //Console.CursorVisible = false;
+            
+            DisplayTime(false);
 
-            CancellationTokenSource tokenSource = new();
-            ThreadStart threadStart = new(delegate () { DisplayTime(); });
+            Console.CursorTop = 2;
+            Console.Write("Enter time of Rickroll: ");
 
-            Thread DisplayTime_Thread = new(threadStart) { IsBackground = true };//TURN INTO A TIMER
-            DisplayTime_Thread.Start();
+            Timer DisplayTime_Timer = new(1000) { AutoReset = true };
+            DisplayTime_Timer.Elapsed += (source, e) => DisplayTime(false);
+            DisplayTime_Timer.Start();
 
-            TimeSpan enteredTime;
-            while (!TimeSpan.TryParse(Console.ReadLine(), out enteredTime))
+            TimeSpan enteredTime = TimeSpan.MinValue;
+            bool timeNotParsed;
+            while ((timeNotParsed = !TimeSpan.TryParse(Console.ReadLine(), out enteredTime)) || ((enteredTime - DateTime.Now.TimeOfDay).Seconds <= 0))
             {
                 Console.SetCursorPosition(24,2);
 
                 Console.ForegroundColor = ConsoleColor.DarkRed;
-                Console.Write("Incorrect time format!");
+                Console.Write(timeNotParsed ? "Incorrect time format!" : "Time is in the past!");
                 Console.ResetColor();
 
-                Thread.Sleep(1000);
+                System.Threading.Thread.Sleep(1250);
 
                 Console.SetCursorPosition(24,2);
                 Console.Write(new string(' ', Console.WindowWidth));
                 Console.SetCursorPosition(24,2);
             }
 
-            tokenSource.Cancel();
-            DisplayTime_Thread = new(threadStart) { IsBackground = true };
-            DisplayTime_Thread.Start();
+            DisplayTime_Timer.Stop();
+            DisplayTime_Timer.Elapsed += (source, e) => DisplayTime(true);
+            DisplayTime_Timer.Start();
 
-            Thread.Sleep(20);
+            Timer DisplayCountdown_Timer = new(1000) { AutoReset = true };
+            DisplayCountdown_Timer.Elapsed += (source, e) => DisplayCountdown(enteredTime);
 
-            Thread DisplayCountdown_Thread = new(new ThreadStart(delegate () { DisplayCountdown(enteredTime); })) { IsBackground = true };
-            DisplayCountdown_Thread.Start();//TURN TNTO A TIMER
+            DisplayTime_Timer.Stop();
+            DisplayCountdown_Timer.Start();
+            System.Threading.Thread.Sleep(20);
+            DisplayTime_Timer.Start();
 
-            TimeSpan timeDifference = enteredTime - DateTime.Now.TimeOfDay;
+            //Console.WriteLine(timeDifference.TotalSeconds);
 
-            System.Timers.Timer timer = new(timeDifference.TotalMilliseconds) { Enabled = true, AutoReset = false };
-            timer.Elapsed += (source, e) => TimerElapsed(source, e, link);
+            Timer timer = new((enteredTime - DateTime.Now.TimeOfDay).TotalMilliseconds) { AutoReset = false };
+            timer.Elapsed += (source, e) => TimerElapsed(link);
             timer.Start();
-            Console.ReadKey();
 
             //Console.ForegroundColor = ConsoleColor.DarkRed;
             //Console.Clear();
             //Console.WriteLine("Entered time has already passed!");
 
             Console.ReadKey();
-            tokenSource.Dispose();
             Environment.Exit(Environment.ExitCode);
         }
 
-        private static void TimerElapsed(object source, ElapsedEventArgs e, string link)
+        private static void TimerElapsed(string link)
         {
             Process process = new()
             {
@@ -94,41 +100,18 @@ namespace TimedRickroll
             process.Start();
         }
 
-        private async static void DisplayCountdown(TimeSpan enteredTime)
+        private static void DisplayCountdown(TimeSpan enteredTime)
         {
-            const string Text = "Remaining time: ";
-            Console.Write("\n" + Text);
-            while (true) 
-            {
-                Console.SetCursorPosition(Text.Length,3);
-                Console.Write((enteredTime - DateTime.Now.TimeOfDay + TimeSpan.FromSeconds(1)).ToString("hh\\:mm\\:ss"));
-
-                await Task.Delay(1000);
-
-                Console.SetCursorPosition(Text.Length,3);
-                Console.Write(new string(' ', Console.WindowWidth));
-            }
+            Console.SetCursorPosition(0,3);
+            Console.Write($"Remaining time: {enteredTime - DateTime.Now.TimeOfDay + TimeSpan.FromSeconds(1):hh\\:mm\\:ss}");
         }
 
-        private async static void DisplayTime(CancellationToken token = default)
+        private static void DisplayTime(bool timeEntered)
         {
-            const string Text = "Enter time of Rickroll: ";
-            int cursorPosLeft = 0;
-
-            Console.CursorTop = 2;
-            Console.Write(Text);
-
-            while (!token.IsCancellationRequested)
-            {
-                Console.SetCursorPosition(0,1);
-                Console.Write($"Current time: {DateTime.Now:HH:mm:ss} (hours:minutes:seconds)");
-                Console.SetCursorPosition(Text.Length + cursorPosLeft, 2);
-
-                try { await Task.Delay(1000, token); } catch (TaskCanceledException) { return; }
-
-                Console.CursorTop = 1;
-                cursorPosLeft = Console.CursorLeft - Text.Length;
-            }
+            cursorPosLeft = Console.CursorLeft - 24;
+            Console.SetCursorPosition(0,1);
+            Console.Write($"Current time: {DateTime.Now:HH:mm:ss} (hours:minutes:seconds)");
+            if (!timeEntered) Console.SetCursorPosition(cursorPosLeft + 24, 2);
         }
     }
 }
